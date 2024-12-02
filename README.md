@@ -1,66 +1,58 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Caddy with Local HTTPs and HTTP 3.0 / Quic integrations
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## To Get Started
 
-## About Laravel
+#### Starting Docker
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+CD into the application and enter the following commands to get started:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+> docker-compose up
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+#### Enabling Local HTTPS
 
-## Learning Laravel
+Now we need to install Caddy's root CA cert on our machines, so browsers and HTTP Clients we use will trust Caddy's 
+TLS certificate.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+To do this, you can follow the documentation as listed [here](https://caddyserver.com/docs/running#local-https-with-docker).
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+OR
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Run the following commands for your OS:
 
-## Laravel Sponsors
+#### Linux:
+> docker compose cp \
+caddy:/data/caddy/pki/authorities/local/root.crt \
+/usr/local/share/ca-certificates/root.crt \
+&& sudo update-ca-certificates
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+#### Mac:
+> docker compose cp \
+caddy:/data/caddy/pki/authorities/local/root.crt \
+/tmp/root.crt \
+&& sudo security add-trusted-cert -d -r trustRoot \
+-k /Library/Keychains/System.keychain /tmp/root.crt
 
-### Premium Partners
+#### Windows:
+> docker compose cp \
+caddy:/data/caddy/pki/authorities/local/root.crt \
+/tmp/root.crt \
+&& sudo security add-trusted-cert -d -r trustRoot \
+-k /Library/Keychains/System.keychain /tmp/root.crt
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Since some browsers ignore your machine's trust store, you may also have to install the certificate on the browser:
 
-## Contributing
+#### Firefox
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Go to Preferences > Privacy & Security > Certificates > View Certificates > Authorities > Import and select your **root.crt**.
 
-## Code of Conduct
+#### Chrome
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Go to Settings < Privacy and security > Security > Manage certificates > Authorities > Import and select your **root.crt**.
 
-## Security Vulnerabilities
+## Notes
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- HTTP 3.0 / Quic may not always be used on requests since the browser chooses the best protocol to use in its requests.
+- You can force your browser to only use Quic by removing the **- '443:443'** line in the **docker-compose.yml** file which
+forces Caddy to use port 443 over UDP.
+- You can check which protocol is being used by going to Dev Tools > Network > Right-click the table's header with the Name,
+Status, etc. columns > Check **Protocol**. '**h3**' will indicate requests made with the HTTP 3.0 protocol.
